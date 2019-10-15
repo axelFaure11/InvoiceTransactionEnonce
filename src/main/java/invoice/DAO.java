@@ -92,13 +92,9 @@ public class DAO {
                 {
                     connection.setAutoCommit(false);
                     ResultSet keys = stmt3.executeQuery();
-                    System.out.println(keys.toString());
-                    int key;
-                    if(keys == null){
-                        key = 0;
-                    } else {
-                        key = keys.getInt("max")+1;
-                    }
+                    System.out.println(keys.getInt(0));
+                    int key = pStmt.getGeneratedKeys().getInt(0);
+                    System.out.println(key);
                     int total = 0;
                     try {
                         pStmt.setInt(1, key);
