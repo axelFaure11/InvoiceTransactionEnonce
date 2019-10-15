@@ -82,14 +82,23 @@ public class DAO {
                 String sql = "INSERT INTO Invoice VALUES (?, ?, ?)";
                 String sql1 = "INSERT INTO Item VALUES (?, ?, ?, ?, ?)";
                 String sql2 = "SELECT price FROM Product WHERE ID = ?";
+                String sql3 = "SELECT MAX(ID) AS max FROM Invoice";
                 
                 try(Connection connection = myDataSource.getConnection();
                     PreparedStatement pStmt = connection.prepareStatement(sql);
                     PreparedStatement pStmt1 = connection.prepareStatement(sql1);
-                    PreparedStatement pStmt2 = connection.prepareStatement(sql2))
+                    PreparedStatement pStmt2 = connection.prepareStatement(sql2);
+                    PreparedStatement stmt3 = connection.prepareStatement(sql3))
                 {
                     connection.setAutoCommit(false);
-                    int key = pStmt.getGeneratedKeys().getInt(0);
+                    ResultSet keys = stmt3.executeQuery();
+                    System.out.println(keys.toString());
+                    int key;
+                    if(keys == null){
+                        key = 0;
+                    } else {
+                        key = keys.getInt("max")+1;
+                    }
                     int total = 0;
                     try {
                         pStmt.setInt(1, key);
