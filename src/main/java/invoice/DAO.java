@@ -80,14 +80,44 @@ public class DAO {
 		throws Exception {
             
                 String sql = "INSERT INTO Invoice VALUES (?, ?, ?)";
+                String sql1 = "INSERT INTO Item VALUES (?, ?, ?, ?, ?)";
+                String sql2 = "SELECT price FROM Product WHERE ID = ?";
+                
                 try(Connection connection = myDataSource.getConnection();
-                    PreparedStatement pStmt = connection.prepareStatement(sql))
+                    PreparedStatement pStmt = connection.prepareStatement(sql);
+                    PreparedStatement pStmt1 = connection.prepareStatement(sql1);
+                    PreparedStatement pStmt2 = connection.prepareStatement(sql2))
                 {
                     connection.setAutoCommit(false);
-                    ResultSet keys = pStmt.getGeneratedKeys();
+                    int key = pStmt.getGeneratedKeys().getInt(0);
+                    int total = 0;
                     try {
-                        pStmt.setInt(1, keys.getInt(0));
-                        
+                        pStmt.setInt(1, key);
+                        pStmt.setInt(2, customer.getCustomerId());
+                        int key1;
+                        for(int i = 0; i<quantities[i]; i++){
+                            key1 = pStmt.getGeneratedKeys().getInt(0);
+                            try {
+                                pStmt1.setInt(1, key);
+                                pStmt1.setInt(2, key1);
+                                pStmt1.setInt(3, productIDs[i]);
+                                pStmt1.setInt(4, quantities[i]);
+                                
+                                ResultSet rs = pStmt2.executeQuery();
+                                
+                                pStmt1.setInt(5, quantities[i]*rs.getInt("PRICE"));
+                                
+                                total = total + quantities[i]*rs.getInt("PRICE");
+                                int numberUpdated = pStmt1.executeUpdate();
+                                if(numberUpdated == 0){
+                                    throw new Exception();
+                                }
+                            } catch (Exception e){
+                                throw e;
+                            }
+                        pStmt.setInt(3, total);
+                        int invoiceUpdated = pStmt.executeUpdate();
+                        }
                     } catch (Exception e){
                         connection.rollback();
                         throw e;
