@@ -78,7 +78,23 @@ public class DAO {
 	 */
 	public void createInvoice(CustomerEntity customer, int[] productIDs, int[] quantities)
 		throws Exception {
-		throw new UnsupportedOperationException("Pas encore implémenté");
+            
+                String sql = "INSERT INTO Invoice VALUES (?, ?, ?)";
+                try(Connection connection = myDataSource.getConnection();
+                    PreparedStatement pStmt = connection.prepareStatement(sql))
+                {
+                    connection.setAutoCommit(false);
+                    ResultSet keys = pStmt.getGeneratedKeys();
+                    try {
+                        pStmt.setInt(1, keys.getInt(0));
+                        
+                    } catch (Exception e){
+                        connection.rollback();
+                        throw e;
+                    } finally {
+                        connection.setAutoCommit(true);
+                    }
+                }
 	}
 
 	/**
