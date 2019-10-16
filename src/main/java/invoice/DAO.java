@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.sql.DataSource;
+import org.omg.CORBA.INITIALIZE;
 
 public class DAO {
 
@@ -78,57 +79,72 @@ public class DAO {
 	 */
 	public void createInvoice(CustomerEntity customer, int[] productIDs, int[] quantities)
 		throws Exception {
-            
+                
                 String sql = "INSERT INTO Invoice VALUES (?, ?, ?)";
                 String sql1 = "INSERT INTO Item VALUES (?, ?, ?, ?, ?)";
                 String sql2 = "SELECT price FROM Product WHERE ID = ?";
-                String sql3 = "SELECT MAX(ID) AS max FROM Invoice";
                 
                 try(Connection connection = myDataSource.getConnection();
-                    PreparedStatement pStmt = connection.prepareStatement(sql);
-                    PreparedStatement pStmt1 = connection.prepareStatement(sql1);
-                    PreparedStatement pStmt2 = connection.prepareStatement(sql2);
-                    PreparedStatement stmt3 = connection.prepareStatement(sql3))
+                    PreparedStatement pStmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+                    PreparedStatement pStmt1 = connection.prepareStatement(sql1, Statement.RETURN_GENERATED_KEYS);
+                    PreparedStatement pStmt2 = connection.prepareStatement(sql2))
                 {
                     connection.setAutoCommit(false);
-                    ResultSet keys = stmt3.executeQuery();
-                    System.out.println(keys.getInt(0));
-                    int key = pStmt.getGeneratedKeys().getInt(0);
-                    System.out.println(key);
+                    int invoiceKey = 0;
+                    try(ResultSet keys = pStmt.getGeneratedKeys())
+                    {
+                    if(keys.next()){
+                        invoiceKey = keys.getInt(0);
+                    }
                     int total = 0;
                     try {
-                        pStmt.setInt(1, key);
+                        pStmt.setInt(1, invoiceKey);
                         pStmt.setInt(2, customer.getCustomerId());
-                        int key1;
-                        for(int i = 0; i<quantities[i]; i++){
-                            key1 = pStmt.getGeneratedKeys().getInt(0);
+                        int itemKey = 0;
+                        try(ResultSet keysItem = pStmt1.getGeneratedKeys())
+                        {
+                        for(int i = 0; i<productIDs.length; i++){
+                            if(keysItem.next()){
+                                itemKey = keysItem.getInt(0);
+                            }
                             try {
-                                pStmt1.setInt(1, key);
-                                pStmt1.setInt(2, key1);
+                                pStmt1.setInt(1, invoiceKey);
+                                pStmt1.setInt(2, itemKey);
                                 pStmt1.setInt(3, productIDs[i]);
                                 pStmt1.setInt(4, quantities[i]);
                                 
-                                ResultSet rs = pStmt2.executeQuery();
-                                
-                                pStmt1.setInt(5, quantities[i]*rs.getInt("PRICE"));
-                                
-                                total = total + quantities[i]*rs.getInt("PRICE");
-                                int numberUpdated = pStmt1.executeUpdate();
-                                if(numberUpdated == 0){
-                                    throw new Exception();
+                                pStmt2.setInt(1, productIDs[i]);
+                                ResultSet rsprix = pStmt2.executeQuery();
+                                int prix = 0;
+                                if(rsprix.next()){
+                                    prix = quantities[i] * rsprix.getInt("PRICE");
+                                    pStmt1.setInt(5, prix);
                                 }
+                                total = total + prix;
+                                System.out.println("ID : " + invoiceKey);
+                                System.out.println("customerID : " + customer.getCustomerId());
+                                System.out.println("Total : " + total);
+                                pStmt.setInt(3, total);
+                                
+                                
                             } catch (Exception e){
                                 throw e;
                             }
-                        pStmt.setInt(3, total);
-                        int invoiceUpdated = pStmt.executeUpdate();
                         }
+                        }
+                        int invoiceUpdated = pStmt.executeUpdate();
+                        if(invoiceUpdated == 0) throw new Exception();
+                        
+                        int numberUpdated = pStmt1.executeUpdate();
+                        if(numberUpdated == 0) throw new Exception();
+                        
+                        connection.commit();
                     } catch (Exception e){
                         connection.rollback();
-                        throw e;
                     } finally {
                         connection.setAutoCommit(true);
                     }
+                }
                 }
 	}
 

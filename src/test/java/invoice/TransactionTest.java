@@ -85,8 +85,9 @@ public class TransactionTest {
 		int[] quantities = new int[]{2};
 		// On exécute la transaction
 		myDAO.createInvoice(myCustomer, productIds, quantities);
-
+                
 		float after = myDAO.totalForCustomer(id);
+                System.out.println("Nombre de factures : " + myDAO.numberOfInvoicesForCustomer(id));
 		System.out.printf("After: %f %n", after);
 
 		// Le client a maintenant 2*10€ de plus
