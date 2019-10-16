@@ -94,7 +94,24 @@ public class TransactionTest {
 
 		assertEquals(before + 2f * 10f, after, 0.001f);		
 	}
+        
+        @Test (expected = Exception.class)
+        public void unregisteredProductIDUsed() throws Exception {
+                int id = myCustomer.getCustomerId();
+		float before = myDAO.totalForCustomer(id);
+                int[] productIds = new int[]{5};
+		int[] quantities = new int[]{2};
+                myDAO.createInvoice(myCustomer, productIds, quantities);
+        }
 	
+        @Test (expected = Exception.class)
+        public void negativeQuantity() throws Exception {
+                int id = myCustomer.getCustomerId();
+		float before = myDAO.totalForCustomer(id);
+                int[] productIds = new int[]{0};
+		int[] quantities = new int[]{-1};
+                myDAO.createInvoice(myCustomer, productIds, quantities);
+        }
 
 	
 	public static DataSource getDataSource() throws SQLException {

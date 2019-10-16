@@ -117,6 +117,9 @@ public class DAO {
                             try(ResultSet keysItem = pStmt1.getGeneratedKeys()){
                                 //Pour chaque produit, on créer un Item
                                 for(int i = 0; i<productIDs.length; i++){
+                                    if(quantities[i] < 0){
+                                        throw new Exception();
+                                    }
                                     if(keysItem.next()){
                                         itemKey = keysItem.getInt(0);
                                     }
@@ -158,6 +161,7 @@ public class DAO {
                         }
                     } catch (Exception e){
                         connection.rollback();
+                        throw e;
                     } finally {
                         connection.setAutoCommit(true);
                     }
